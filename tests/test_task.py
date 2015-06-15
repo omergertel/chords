@@ -80,5 +80,7 @@ def test_decorator_sleeps_until_free(exclusive):
         run()
     finally:
         waiting.wait = orig_wait
+
+    assert has_run
     assert not other.is_satisfied()
 
