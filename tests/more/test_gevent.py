@@ -21,28 +21,31 @@ def task_class(request):
 
 @pytest.mark.parametrize('exclusive', [True, False])
 def test_decorator_sleeps_until_free(initiated_registry, exclusive):
-    run_counter = []
+    start_counter = []
+    end_counter = []
     
     @requires(int, exclusive, max_value=2)
     @requires(int, exclusive, max_value=2)
     def task_func(resources):
-        run_counter.append(True)
-        old_counter = len(run_counter)
+        start_counter.append(True)
+        old_counter = len(start_counter)
+        assert resources.is_satisfied()
 
-        assert resources.is_satisfied()
-        flux.current_timeline.sleep(1)
-        assert resources.is_satisfied()
-        vals = [v.get_value() for v in resources.find(int)]
-        assert len(vals) == 2
+        flux.current_timeline.sleep(0)
 
         if exclusive:
-            assert old_counter == len(run_counter), "Other task didn't wait for this to finish"
+            assert old_counter == len(start_counter) and old_counter == len(end_counter) + 1, "Other task didn't wait for this to finish"
         else:
-            assert old_counter == 2 or old_counter < len(run_counter), "Other task should have started in parallel"
+            assert len(start_counter) == 2 and len(end_counter) == 0, "Other task should have started in parallel"
+
+        flux.current_timeline.sleep(0)
+
+        end_counter.append(True)
         return old_counter
 
     res1 = task_func()
     res2 = task_func()
     assert res1.get() == 1
     assert res2.get() == 2
-    assert len(run_counter) == 2
+    assert len(start_counter) == 2
+    assert len(end_counter) == 2
