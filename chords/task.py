@@ -1,4 +1,7 @@
 from .chord import Chord
+import inspect
+import functools
+
 
 class Task(object):
     def __init__(self):
@@ -14,7 +17,7 @@ class Task(object):
     def start(self, *args, **kwargs):
         self.requires(self._resources)
         with self._resources:
-            self.run(*args, **kwargs)
+            return self.run(*args, **kwargs)
 
     def run(self, *args, **kwargs):
         """
@@ -23,27 +26,44 @@ class Task(object):
         raise NotImplementedError()
 
 
-class FunctionTask(Task):
-    def __init__(self, func):
-        super(FunctionTask, self).__init__()
+_default_task_class = Task
+
+def set_default_task_class(task_class):
+    global _default_task_class
+    _default_task_class = task_class
+
+def get_default_task_class():
+    return _default_task_class
+
+
+class TaskFactory(object):
+    def __init__(self, func, task_class):
+        self._task_class = task_class
+        self._requirements = []
         self._func = func
         self.__name__ = self._func.__name__
         self.__doc__ = self._func.__doc__
     
     def add_requirement(self, cls, exclusive, **kwargs):
-        self._resources.request(cls, exclusive, **kwargs)
+        self._requirements.append(dict(cls=cls, exclusive=exclusive, kwargs=kwargs))
     
-    def run(self, *args, **kwargs):
-        self._func(self._resources, *args, **kwargs)
-        
     def __call__(self, *args, **kwargs):
-        self.start()
+        task = self._task_class()
+        task.run = self._func
+        if 'resources' in inspect.getargspec(self._func)[0]:
+            task.run = functools.partial(self._func, resources=task._resources)
 
+        for requirement in self._requirements:
+            task._resources.request(requirement['cls'], requirement['exclusive'], **requirement['kwargs'])
+        return task.start()
 
-def requires(cls, exclusive=False, **kwargs):
+def requires(cls, exclusive=False, task_class=None, **kwargs):
+    if task_class is None:
+        task_class = _default_task_class
     def wrapper(func):
-        if not isinstance(func, FunctionTask):
-            func = FunctionTask(func)
+        if not isinstance(func, TaskFactory):
+            task = TaskFactory(func, task_class)
+            func = task
         func.add_requirement(cls, exclusive, **kwargs)
         return func
     return wrapper

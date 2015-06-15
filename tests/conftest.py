@@ -37,3 +37,9 @@ class TestPool(Pool):
 def registry(request):
     request.addfinalizer(chord_reg.clear)
     return chord_reg
+
+@pytest.fixture
+def initiated_registry(request, registry):
+    registry.register(int, TestPool(int))
+    registry.register(float, TestPool(float))
+    return registry

@@ -7,7 +7,6 @@ from chords.exceptions import UnsatisfiedResourcesError
 def req(request):
     return Request(int, request.param)
 
-
 @pytest.fixture
 def resource():
     return Resource(int)

@@ -1,17 +1,11 @@
 import pytest, waiting
 from chords.chord import Chord
 from chords.exceptions import UnsatisfiedResourcesError
-from .conftest import TestPool
-
-@pytest.fixture(autouse=True)
-def registry(request, registry):
-    registry.register(int, TestPool(int))
-    registry.register(float, TestPool(float))
-    return registry
 
 @pytest.fixture
-def chord():
+def chord(initiated_registry):
     return Chord()
+
 
 def test_request(chord):
     chord.request(int, False)

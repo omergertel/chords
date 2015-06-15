@@ -1,16 +1,9 @@
 import pytest, waiting
 from chords.task import requires
 from chords.chord import Chord
-from .conftest import TestPool
-
-@pytest.fixture(autouse=True)
-def registry(request, registry):
-    registry.register(int, TestPool(int))
-    registry.register(float, TestPool(float))
-    return registry
 
 @pytest.mark.parametrize('exclusive', [True, False])
-def test_decorator(exclusive):
+def test_decorator(initiated_registry, exclusive):
     has_run = []
     
     @requires(int, exclusive, max_value=1)
@@ -23,7 +16,7 @@ def test_decorator(exclusive):
     assert has_run
 
 @pytest.mark.parametrize('exclusive', [True, False])
-def test_decorator_multiple_resources(exclusive):
+def test_decorator_multiple_resources(initiated_registry, exclusive):
     has_run = []
 
     @requires(int, exclusive, max_value=2)
@@ -41,7 +34,7 @@ def test_decorator_multiple_resources(exclusive):
     assert has_run
 
 @pytest.mark.parametrize('exclusive', [True, False])
-def test_decorator_multiple_types(exclusive):
+def test_decorator_multiple_types(initiated_registry, exclusive):
     has_run = []
 
     @requires(int, exclusive, max_value=1)
@@ -56,7 +49,7 @@ def test_decorator_multiple_types(exclusive):
     assert has_run
 
 @pytest.mark.parametrize('exclusive', [True, False])
-def test_decorator_sleeps_until_free(exclusive):
+def test_decorator_sleeps_until_free(initiated_registry, exclusive):
     other = Chord()
     other.request(int, True, max_value=2)
     other.allocate()
