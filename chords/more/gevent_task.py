@@ -9,5 +9,3 @@ class GeventTask(Task):
     def start(self, *args, **kwargs):
         return spawn(functools.partial(Task.start, self, *args, **kwargs))
     
-    def _on_success(self, res):
-        res.set(self.value)

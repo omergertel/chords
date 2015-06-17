@@ -137,3 +137,11 @@ def test_fail_find_if_not_satisfied(chord):
     chord.release()
     with pytest.raises(UnsatisfiedResourcesError):
         chord.find(int)
+
+def test_exception_handling(chord):
+    chord.request(int, True, max_value=2)
+    chord.request(int, True, max_value=2)
+    with pytest.raises(ValueError):
+        with chord:
+            raise ValueError()
+    assert not chord.is_satisfied()

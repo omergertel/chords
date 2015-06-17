@@ -1,5 +1,5 @@
 import pytest, waiting
-from chords.task import requires
+from chords.task import requires, Task
 from chords.chord import Chord
 
 @pytest.mark.parametrize('exclusive', [True, False])
@@ -77,3 +77,47 @@ def test_decorator_sleeps_until_free(initiated_registry, exclusive):
     assert has_run
     assert not other.is_satisfied()
 
+def test_task_with_no_params(initiated_registry):
+    has_run = []
+
+    @requires(int, True, max_value=1)
+    def run():
+        has_run.append(True)
+
+    run()
+    assert has_run
+
+def test_subtask(initiated_registry):
+    has_run = []
+
+    class TestTask(Task):
+        def require(self, resources):
+            resources.request(int, True, max_value=1)
+
+        def run(self, resources, *args, **kwargs):
+            has_run.append(True)
+            assert resources.get(int).get_value() == 1
+            secondary = self.step1()
+            assert not secondary.is_satisfied()
+            self.step2()
+            self.step3(resources)
+
+        @requires(int, False, max_value=2)
+        def step1(self, resources):
+            assert resources.get(int).get_value() == 2
+            has_run.append(True)
+            return resources
+
+        @requires(int, False, max_value=2)
+        def step2(self):
+            has_run.append(True)
+
+        @requires(int, False, max_value=2)
+        def step3(self, resources, cls_resources):
+            # Note how the arguments given to the call have been shifted
+            assert cls_resources.get(int).get_value() == 1
+            assert resources.get(int).get_value() == 2
+            has_run.append(True)
+
+    TestTask().start()
+    assert len(has_run) == 4
