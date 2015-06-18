@@ -11,6 +11,7 @@ def register(cls, pool=None):
     if not isinstance(pool, Pool):
         raise TypeError('Expected Pool, got {}'.format(pool))
     _registry[cls] = pool
+    return pool
 
 def unregister(cls):
     if not cls in _registry:
