@@ -28,10 +28,8 @@ def get_resource(request):
         raise UnknownResourceError("{} is not registered".format(request.cls))
     return _registry[request.cls].get(request)
 
-def clear():
-    _registry.clear()
-
 def find_resources(request):
     if not request.cls in _registry:
         raise UnknownResourceError("{} is not registered".format(request.cls))
     return _registry[request.cls].find(request)
+

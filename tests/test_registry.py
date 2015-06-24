@@ -1,8 +1,17 @@
 import pytest
 from chords.exceptions import UnknownResourceError
 from chords.pool import Pool
+from chords import registry as chord_reg
 from chords.request import Request
 from .conftest import TestPool
+
+@pytest.fixture
+def registry(request):
+    @request.addfinalizer
+    def restore():
+        if int in chord_reg._registry:
+            del chord_reg._registry[int]
+    return chord_reg
 
 def test_register(registry):
     registry.register(int, TestPool(int))

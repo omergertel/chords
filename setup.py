@@ -10,7 +10,7 @@ with open(_in_same_dir("chords", "__version__.py")) as version_file:
     exec(version_file.read())  # pylint: disable=W0122
 
 install_requires = [
-    # DO NOT ADD pyforge, lxml or any other package only required for testing
+    # DO NOT ADD any package only required for testing
 ]
 
 if _PYTHON_VERSION < "2.7":

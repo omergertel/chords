@@ -1,4 +1,4 @@
-from ..pool import Pool
+from chords.pool import Pool
 
 class EphemeralPool(Pool):
     """

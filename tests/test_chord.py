@@ -120,6 +120,34 @@ def test_allocate_context_sleeps_until_free(chord, exclusive):
     assert not other.is_satisfied()
     assert not chord.is_satisfied()
 
+def test_allocate_context_sleeps_until_exclusive_free(chord):
+    other = Chord()
+    other.request(int, False, max_value=1)
+    other.allocate()
+    has_run = []
+
+    orig_wait = waiting.wait
+    def wait_and_release(func):
+        while not func():
+            has_run.append(True)
+            other.release()
+    waiting.wait = wait_and_release
+
+    try:
+        chord.request(int, True, max_value=1)
+        chord.request(float, True, max_value=1)
+        with chord:
+            assert has_run
+            assert chord.is_satisfied()
+            vals = [r.get_value() for r in chord.find(int)]
+            assert len(vals) == 1
+            assert vals[0] == 1
+    finally:
+        waiting.wait = orig_wait
+    assert not other.is_satisfied()
+    assert not chord.is_satisfied()
+
+
 def test_fail_get_if_not_satisfied(chord):
     chord.request(int, False)
     with pytest.raises(UnsatisfiedResourcesError):

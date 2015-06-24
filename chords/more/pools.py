@@ -1,5 +1,5 @@
 import functools, random
-from .pool import Pool
+from ..pool import Pool
 
 class ScoredPool(Pool):
     def find(self, request):

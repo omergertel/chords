@@ -1,5 +1,5 @@
 import sys, pytest
-from chords import registry as chord_reg
+from chords import registry
 from chords.pool import Pool
 from chords.resource import Resource
 
@@ -34,12 +34,11 @@ class TestPool(Pool):
         self._resources = [TestResource(cls, i) for i in range(1, 100)]
 
 @pytest.fixture
-def registry(request):
-    request.addfinalizer(chord_reg.clear)
-    return chord_reg
-
-@pytest.fixture
-def initiated_registry(request, registry):
+def initiated_registry(request):
     registry.register(int, TestPool(int))
     registry.register(float, TestPool(float))
+    @request.addfinalizer
+    def restore():
+        del registry._registry[int]
+        del registry._registry[float]
     return registry

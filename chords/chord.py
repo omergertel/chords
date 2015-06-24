@@ -1,7 +1,9 @@
-import waiting, itertools
+import waiting, itertools, logging
 from .exceptions import UnsatisfiedResourcesError
 from .request import Request
 from . import registry
+
+_logger = logging.getLogger('Chords')
 
 class Chord(object):
     def __init__(self):
@@ -56,6 +58,7 @@ class Chord(object):
 
         # acquire
         for request, resource in self._items(resources):
+            _logger.debug('Acquire {} with {}'.format(resource, request))
             resource.acquire(request)
 
         self._resources = resources
@@ -65,6 +68,7 @@ class Chord(object):
         if self.is_satisfied():
             if self._resources is not None:
                 for request, resource in self._items(self._resources):
+                    _logger.debug('Release {} from {}'.format(resource, request))
                     resource.release(request)
                 self._resources = None
 

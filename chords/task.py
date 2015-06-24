@@ -1,11 +1,21 @@
 import inspect, types
+from .pool import HashPool
 from .chord import Chord
-
+from .resource import ProxyResource
+from . import registry
 
 class Task(object):
-    def __init__(self, target=None):
+    def __init__(self, target=None, name=None):
         """Similar to threads, if target is not None, will run target. You may also override the run method."""
         self._run = target
+        self._name = name
+
+    def get_name(self):
+        if self._name is not None:
+            return self._name
+        if self._run:
+            return self._run.__name__
+        return self.__class__.__name__
 
     def require(self, resources):
         """
@@ -16,6 +26,7 @@ class Task(object):
 
     def start(self, *args, **kwargs):
         resources = kwargs.pop('resources', Chord())
+        resources.request(Task, False, key=self.get_name())
         self.require(resources)
         with resources:
             if self._run is None:
@@ -42,6 +53,22 @@ class Task(object):
         raise NotImplementedError()
 
 
+class TaskPool(HashPool):
+    def add(self, task_or_str):
+        if isinstance(task_or_str, Task):
+            task_or_str = task_or_str.get_name()
+        self._resources[task_or_str] = ProxyResource(task_or_str)
+
+    def find(self, request):
+        if 'key' in request.kwargs and request.kwargs.get('key') not in self._resources:
+            self.add(request.kwargs.get('key'))
+        return super(TaskPool, self).find(request)
+
+
+registry.register(Task, TaskPool())
+
+### DECORATORS
+
 _default_task_class = Task
 
 def set_default_task_class(task_class):
@@ -53,8 +80,8 @@ def get_default_task_class():
 
 
 class TaskFactory(object):
-    def __init__(self, func, task_class):
-        self._task_class = task_class
+    def __init__(self, func):
+        self._task_class = None
         self._requirements = []
         self._func = func
         self.__name__ = self._func.__name__
@@ -64,7 +91,8 @@ class TaskFactory(object):
         self._requirements.append(dict(cls=cls, exclusive=exclusive, kwargs=kwargs))
     
     def __call__(self, *args, **kwargs):
-        task = self._task_class(self._func)
+        task_class = self._task_class or get_default_task_class()
+        task = task_class(self._func)
         resources = Chord()
         for requirement in self._requirements:
             resources.request(requirement['cls'], requirement['exclusive'], **requirement['kwargs'])
@@ -73,12 +101,26 @@ class TaskFactory(object):
     def __get__(self, instance, cls=None):
         return types.MethodType(self, instance, cls)
 
-def requires(cls, exclusive=False, task_class=None, **kwargs):
+
+def task(name=None, task_class=None):
     if task_class is None:
-        task_class = _default_task_class
+        task_class = get_default_task_class()
     def wrapper(func):
         if not isinstance(func, TaskFactory):
-            task = TaskFactory(func, task_class)
+            task = TaskFactory(func)
+            func = task
+        if name:
+            func.__name__ = name
+        if task_class:
+            func._task_class = task_class
+        return func
+    return wrapper
+
+
+def requires(cls, exclusive=False, **kwargs):
+    def wrapper(func):
+        if not isinstance(func, TaskFactory):
+            task = TaskFactory(func)
             func = task
         func.add_requirement(cls, exclusive, **kwargs)
         return func
