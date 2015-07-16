@@ -1,14 +1,10 @@
-import logbook
 from .exceptions import UnsatisfiedResourcesError
-
-_logger = logbook.Logger(__name__)
 
 class Resource(object):
     def __init__(self, cls):
         self.cls = cls
         self._shared = 0
         self._exclusive = False
-        self._requests = []
 
     def is_exclusive(self):
         return self._exclusive
@@ -32,7 +28,6 @@ class Resource(object):
             self._exclusive = True
         else:
             self._shared += 1
-        self._requests.append(request)
 
     def release(self, request):
         if request.is_exclusive():
@@ -43,7 +38,6 @@ class Resource(object):
             if self._shared == 0 or self._exclusive:
                 raise UnsatisfiedResourcesError("Shared resource {} can't be released".format(self))
             self._shared -= 1
-        self._requests.remove(request)
         
     def matches(self, request):
         return self.cls == request.cls

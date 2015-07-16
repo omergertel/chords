@@ -17,17 +17,17 @@ class Task(object):
             return self._run.__name__
         return self.__class__.__name__
 
-    def require(self, resources):
+    def require(self, resources, *args, **kwargs):
         """
-        Place requirements for task. Task won't execute until all resources are allocated
-            > resources.request(Volume, SHARED, **kwargs)
+        Place requirements for task. Task won't execute until all resources are acquired
+            > resources.request(Resource, exclusive=True, **kwargs)
         """
         pass
 
     def start(self, *args, **kwargs):
         resources = kwargs.pop('resources', Chord())
         resources.request(Task, False, key=self.get_name())
-        self.require(resources)
+        self.require(resources, *args, **kwargs)
         with resources:
             if self._run is None:
                 return self.run(resources, *args, **kwargs)
@@ -92,7 +92,7 @@ class TaskFactory(object):
     
     def __call__(self, *args, **kwargs):
         task_class = self._task_class or get_default_task_class()
-        task = task_class(self._func)
+        task = task_class(self._func, name=self.__name__)
         resources = Chord()
         for requirement in self._requirements:
             resources.request(requirement['cls'], requirement['exclusive'], **requirement['kwargs'])
@@ -107,8 +107,7 @@ def task(name=None, task_class=None):
         task_class = get_default_task_class()
     def wrapper(func):
         if not isinstance(func, TaskFactory):
-            task = TaskFactory(func)
-            func = task
+            func = TaskFactory(func)
         if name:
             func.__name__ = name
         if task_class:

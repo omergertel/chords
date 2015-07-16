@@ -1,3 +1,4 @@
+import random
 from .resource import Resource
 
 class Pool(object):
@@ -12,7 +13,7 @@ class Pool(object):
         self._resources.remove(resource)
 
     def find(self, request):
-        for resource in self._resources:
+        for resource in self.all():
             if resource.can_acquire(request) and resource.matches(request):
                 yield resource
 
@@ -23,11 +24,18 @@ class Pool(object):
         for resource in self.find(request):
             return resource
 
-    def __len__(self):
-        return len(self._resources)
+    def __iter__(self):
+        return self._resources.__iter__()
+
+    def all(self):
+        return list(self)
+
 
 class HashPool(Pool):
     def __init__(self, key=None):
+        """
+        Key is a callback to get a key for a given resource
+        """
         self._resources = {}
         if key is None:
             key = lambda x:x
@@ -45,6 +53,20 @@ class HashPool(Pool):
             if resource.can_acquire(request):
                 yield resource
         else:
-            for resource in self._resources.values():
-                if resource.can_acquire(request) and resource.matches(request):
-                    yield resource
+            for resource in super(HashPool, self).find(request):
+                yield resource
+
+    def __iter__(self):
+        return self._resources.itervalues()
+
+
+class RandomPool(Pool):
+    def all(self):
+        res = super(RandomPool, self).all()
+        random.shuffle(res)
+        return res
+
+    def remove(self, resource):
+        if resource.is_master():
+            super(RandomPool, self).remove(resource)
+

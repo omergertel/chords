@@ -1,6 +1,9 @@
-class UnsatisfiedResourcesError(Exception):
+class ChordError(Exception):
     pass
 
-class UnknownResourceError(Exception):
+class UnsatisfiedResourcesError(ChordError):
+    pass
+
+class UnknownResourceError(ChordError):
     pass
 

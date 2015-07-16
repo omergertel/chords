@@ -52,7 +52,7 @@ def test_decorator_multiple_types(initiated_registry, exclusive):
 def test_decorator_sleeps_until_free(initiated_registry, exclusive):
     other = Chord()
     other.request(int, True, max_value=2)
-    other.allocate()
+    other.acquire()
     has_run = []
     orig_wait = waiting.wait
     def wait_and_release(func):

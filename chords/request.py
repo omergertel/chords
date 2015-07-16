@@ -11,5 +11,11 @@ class Request(object):
     def is_shared(self):
         return not self._exclusive
 
+    def __getattribute__(self, k):
+        try:
+            return object.__getattribute__(self, k)
+        except AttributeError:
+            return self.kwargs.get(k)
+
     def __repr__(self):
         return "<Request {} {} {}>".format('Exclusive' if self._exclusive else '', self.cls, self.kwargs)

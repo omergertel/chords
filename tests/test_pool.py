@@ -8,14 +8,14 @@ def pool():
 
 
 def test_add(pool):
-    length = len(pool)
+    length = len(pool.all())
     pool.add(TestResource(int, 101))
-    assert length + 1 == len(pool)
+    assert length + 1 == len(pool.all())
 
 def test_remove(pool):
-    length = len(pool)
+    length = len(pool.all())
     pool.remove(TestResource(int, 1))
-    assert length - 1 == len(pool)
+    assert length - 1 == len(pool.all())
 
 def test_fail_remove_not_exists(pool):
     pool.remove(TestResource(int, 1))
@@ -37,4 +37,4 @@ def test_resource_acquired(pool, exclusive):
     assert resource.get_value() == 1
     resource.acquire(req)
     resource = pool.get(req)
-    assert resource is None if exclusive else resource.get_value() == 1 # Shared can be allocated again, but exclusive can't
+    assert resource is None if exclusive else resource.get_value() == 1 # Shared can be acquired again, but exclusive can't
