@@ -24,7 +24,7 @@ def test_fail_remove_not_exists(pool):
 
 def test_find(pool):
     result = [x.get_value() for x in pool.find(Request(int, min_value=5, max_value=10))]
-    assert result == range(5, 11)
+    assert result == [5, 6, 7, 8, 9, 10]
 
 def test_wrong_request(pool):
     assert pool.get(Request(float)) is None

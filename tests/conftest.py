@@ -13,8 +13,8 @@ class TestResource(Resource):
 
     def matches(self, request):
         return (Resource.matches(self, request) and
-                self._value <= request.kwargs.get('max_value', sys.maxint) and
-                self._value >= request.kwargs.get('min_value', -sys.maxint))
+                self._value <= request.kwargs.get('max_value', sys.maxsize) and
+                self._value >= request.kwargs.get('min_value', -sys.maxsize))
 
     def __eq__(self, o):
         if isinstance(o, TestResource):

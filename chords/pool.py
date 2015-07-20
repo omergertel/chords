@@ -3,6 +3,7 @@ from .resource import Resource
 
 class Pool(object):
     def __init__(self):
+        super(Pool, self).__init__()
         self._resources = []
 
     def add(self, resource):
@@ -38,7 +39,7 @@ class HashPool(Pool):
         """
         self._resources = {}
         if key is None:
-            key = lambda x:x
+            key = lambda x: x
         self._key = key
 
     def add(self, resource):

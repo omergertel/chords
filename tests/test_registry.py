@@ -45,9 +45,9 @@ def test_unregister_twice_fails(registry):
 def test_find_resources(registry):
     registry.register(int, TestPool(int))
     results = [i.get_value() for i in registry.find_resources(Request(int, False, max_value=5))]
-    assert results == range(1, 6)
+    assert results == [1, 2, 3, 4, 5]
 
 def test_get_resource(registry):
     registry.register(int, TestPool(int))
     results = registry.get_resource(Request(int, False, max_value=5)).get_value()
-    assert results in range(1, 6)
+    assert results in [1, 2, 3, 4, 5]

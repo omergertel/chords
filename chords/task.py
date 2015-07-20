@@ -98,8 +98,8 @@ class TaskFactory(object):
             resources.request(requirement['cls'], requirement['exclusive'], **requirement['kwargs'])
         return task.start(resources=resources, *args, **kwargs)
 
-    def __get__(self, instance, cls=None):
-        return types.MethodType(self, instance, cls)
+    def __get__(self, instance, cls):
+        return types.MethodType(self, instance or cls)
 
 
 def task(name=None, task_class=None):
