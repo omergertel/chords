@@ -47,7 +47,7 @@ class ProxyResource(Resource):
     A thin wrapper around an object that turns it into a resource, but proxies all attributes to the original object
     """
     def __init__(self, obj):
-        super(ProxyResource, self).__init__(obj.__class__.__name__)
+        super(ProxyResource, self).__init__(obj.__class__)
         super(ProxyResource, self).__setattr__("_obj", obj)
 
     def __getattribute__(self, k):
