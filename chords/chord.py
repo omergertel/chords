@@ -12,6 +12,11 @@ class Chord(object):
     _queue = OrderedDict()
     _last_run = 0
     _in_loop = False
+    _raise_on_error = False
+
+    @classmethod
+    def set_raise_on_error(cls, raise_on_error=True):
+        cls._raise_on_error = True
 
     def __init__(self):
         self._requests = []
@@ -124,6 +129,8 @@ class Chord(object):
         except (KeyboardInterrupt, ChordError):
             raise
         except:
+            if self._raise_on_error:
+                raise
             self._error = sys.exc_info()
             _logger.warn('Exception hidden when {} was attempted: {}'.format(self, self._error[0]), exc_info=True)
 
