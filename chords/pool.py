@@ -1,5 +1,6 @@
 import random
 from .resource import Resource
+from .exceptions import UnsatisfiableRequestError
 
 class Pool(object):
     def __init__(self):
@@ -14,9 +15,15 @@ class Pool(object):
         self._resources.remove(resource)
 
     def find(self, request):
+        found = False
         for resource in self.all():
-            if resource.can_acquire(request) and resource.matches(request):
-                yield resource
+            if resource.matches(request):
+                found = True
+                if resource.can_acquire(request):
+                    yield resource
+
+        if not found:
+            raise UnsatisfiableRequestError("No resources can match request {}".format(request))
 
     def get(self, request):
         """

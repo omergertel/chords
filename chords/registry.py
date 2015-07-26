@@ -1,5 +1,5 @@
 from .pool import Pool
-from .exceptions import UnknownResourceError
+from .exceptions import UnknownResourceClassError
 
 _registry = {}
 
@@ -15,21 +15,21 @@ def register(cls, pool=None):
 
 def unregister(cls):
     if not cls in _registry:
-        raise UnknownResourceError("{} is not registered".format(cls))
+        raise UnknownResourceClassError("{} is not registered".format(cls))
     del _registry[cls]
 
 def get_pool(cls):
     if not cls in _registry:
-        raise UnknownResourceError("{} is not registered".format(cls))
+        raise UnknownResourceClassError("{} is not registered".format(cls))
     return _registry[cls]
 
 def get_resource(request):
     if not request.cls in _registry:
-        raise UnknownResourceError("{} is not registered".format(request.cls))
+        raise UnknownResourceClassError("{} is not registered".format(request.cls))
     return _registry[request.cls].get(request)
 
 def find_resources(request):
     if not request.cls in _registry:
-        raise UnknownResourceError("{} is not registered".format(request.cls))
+        raise UnknownResourceClassError("{} is not registered".format(request.cls))
     return _registry[request.cls].find(request)
 

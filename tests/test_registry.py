@@ -1,5 +1,5 @@
 import pytest
-from chords.exceptions import UnknownResourceError
+from chords.exceptions import UnknownResourceClassError
 from chords.pool import Pool
 from chords import registry as chord_reg
 from chords.request import Request
@@ -33,13 +33,13 @@ def test_register_default_pool(registry):
 def test_unregister(registry):
     registry.register(int)
     registry.unregister(int)
-    with pytest.raises(UnknownResourceError):
+    with pytest.raises(UnknownResourceClassError):
         registry.get_pool(int)
 
 def test_unregister_twice_fails(registry):
     registry.register(int)
     registry.unregister(int)
-    with pytest.raises(UnknownResourceError):
+    with pytest.raises(UnknownResourceClassError):
         registry.unregister(int)
 
 def test_find_resources(registry):

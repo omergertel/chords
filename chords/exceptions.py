@@ -4,6 +4,8 @@ class ChordError(Exception):
 class UnsatisfiedResourcesError(ChordError):
     pass
 
-class UnknownResourceError(ChordError):
+class UnknownResourceClassError(ChordError):
     pass
 
+class UnsatisfiableRequestError(ChordError):
+    pass
