@@ -127,8 +127,10 @@ class Chord(object):
             self._resources = resources
             return True
         except (KeyboardInterrupt, ChordError):
+            Chord._queue.pop(self)
             raise
         except:
+            Chord._queue.pop(self)
             if self._raise_on_error:
                 raise
             self._error = sys.exc_info()
