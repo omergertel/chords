@@ -1,6 +1,7 @@
 import pytest
 from chords.request import Request
 from .conftest import TestResource, TestPool
+from chords.exceptions import UnsatisfiableRequestError
         
 @pytest.fixture
 def pool():
@@ -27,8 +28,10 @@ def test_find(pool):
     assert result == [5, 6, 7, 8, 9, 10]
 
 def test_wrong_request(pool):
-    assert pool.get(Request(float)) is None
-    assert pool.get(Request(int, min_value=200)) is None
+    with pytest.raises(UnsatisfiableRequestError):
+        pool.get(Request(float))
+    with pytest.raises(UnsatisfiableRequestError):
+        pool.get(Request(int, min_value=200))
 
 @pytest.mark.parametrize("exclusive", [False, True])
 def test_resource_acquired(pool, exclusive):

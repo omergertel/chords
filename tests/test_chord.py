@@ -1,12 +1,13 @@
 import pytest, waiting
 from chords.chord import Chord
+from chords.fairness_policies import _fairness
 from chords.exceptions import UnsatisfiedResourcesError
 
 @pytest.fixture
 def chord(request, initiated_registry):
     @request.addfinalizer
     def ensure_cleared():
-        assert len(Chord._queue) == 0
+        assert len(_fairness._queue) == 0
     return Chord()
 
 def test_request(chord):

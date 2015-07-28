@@ -1,27 +1,15 @@
-import waiting, itertools, logging, flux, sys
-from collections import OrderedDict
-from .exceptions import UnsatisfiedResourcesError, ChordError
+import waiting, itertools, logging, sys
+from .exceptions import UnsatisfiedResourcesError
 from .request import Request
+from . import fairness_policies as fairness
 from . import registry
 
 _logger = logging.getLogger('Chords')
 
-ITERATION_MINIMUM = 1
-
 class Chord(object):
-    _queue = OrderedDict()
-    _last_run = 0
-    _in_loop = False
-    _raise_on_error = False
-
-    @classmethod
-    def set_raise_on_error(cls, raise_on_error=True):
-        cls._raise_on_error = True
-
     def __init__(self):
         self._requests = []
         self._resources = None
-        self._waiting = False
         self._error = None
 
     def request(self, cls, exclusive=False, **kwargs):
@@ -58,42 +46,9 @@ class Chord(object):
         Returns:
             True if successful, False otherwise
         """
-        if self.is_satisfied():
+        if self.is_satisfied() or self._acquire():
+            fairness.remove_chord(self)
             return True # Satisfied before, perhaps by previous iteration on the queue
-
-        force = False
-        if self not in Chord._queue: # add to queue
-            Chord._queue[self] = self
-            force = True
-        Chord._try_acquire_chords(force=force)
-
-        if self.is_satisfied(): # Check new status
-            return True
-
-        if not self._waiting: # We only reserve place in queue, via context
-            Chord._queue.pop(self)
-            if self._error:
-                raise self._error
-
-        return False
-
-    @classmethod
-    def _try_acquire_chords(cls, force=False):
-        if cls._in_loop:
-            return
-        cls._in_loop = True
-        try:
-            should_run = (flux.current_timeline.time() - cls._last_run) > ITERATION_MINIMUM
-            if should_run or force:
-                cls._last_run = flux.current_timeline.time()
-                _logger.debug('Trying to allocate {} chords'.format(len(Chord._queue)))
-                for chord in list(Chord._queue): # Give everyone a chance to acquire
-                    _logger.debug('Try allocate {}'.format(chord))
-                    if not chord.is_satisfied():
-                        if chord._acquire():
-                            Chord._queue.pop(chord) # remove if acquired
-        finally:
-            cls._in_loop = False
 
     def _acquire(self):
         """
@@ -103,40 +58,27 @@ class Chord(object):
         Returns:
             True if successful, False otherwise
         """
-        self._error = None
+        resources = {}
 
-        try:
-            resources = {}
-            # Get available resources
-            for request in self._requests:
-                cls_resources = resources.setdefault(request.cls, {})
-                found = False
-                for resource in registry.find_resources(request):
-                    if resource not in cls_resources.values():
-                        cls_resources[request] = resource
-                        found = True
-                        break
-                if not found:
-                    return False
+        # Get available resources
+        for request in self._requests:
+            cls_resources = resources.setdefault(request.cls, {})
+            found = False
+            for resource in registry.find_resources(request):
+                if resource not in cls_resources.values():
+                    cls_resources[request] = resource
+                    found = True
+                    break
+            if not found:
+                return False
 
-            # acquire
-            for request, resource in self._items(resources):
-                _logger.debug('Acquire {} with {}'.format(resource, request))
-                resource.acquire(request)
+        # acquire
+        for request, resource in self._items(resources):
+            _logger.debug('Acquire {} with {}'.format(resource, request))
+            resource.acquire(request)
 
-            self._resources = resources
-            return True
-        except (KeyboardInterrupt, ChordError):
-            Chord._queue.pop(self)
-            raise
-        except:
-            Chord._queue.pop(self)
-            if self._raise_on_error:
-                raise
-            self._error = sys.exc_info()
-            _logger.warn('Exception hidden when {} was attempted: {}'.format(self, self._error[0]), exc_info=True)
-
-        return False
+        self._resources = resources
+        return True
 
     def release(self):
         if self.is_satisfied():
@@ -144,12 +86,24 @@ class Chord(object):
                 _logger.debug('Release {} from {}'.format(resource, request))
                 resource.release(request)
         self._resources = None
-        self._waiting = False
-        Chord._queue.pop(self, None)
+
+    def set_error(self, error):
+        self._error = error
 
     def _items(self, resource_map):
         return itertools.chain(*[cls_resources.items() for cls_resources in itertools.chain(resource_map.values())])
     
+    def _try_acquire(self):
+        if self._error:
+            raise self._error[0], self._error[1], self._error[2]
+        if self.is_satisfied():
+            return True
+        fairness.add_chord(self)
+        fairness.try_acquire_chords()
+        if self._error:
+            raise self._error[0], self._error[1], self._error[2]
+        return self.is_satisfied()
+
     def __iter__(self):
         for resource in self._resources:
             yield resource
@@ -164,12 +118,12 @@ class Chord(object):
 
     def __enter__(self):
         try:
-            self._waiting = True
-            waiting.wait(self.acquire)
+            waiting.wait(self._try_acquire)
             return self
         except:
-            self.release()
+            self.__exit__(*sys.exc_info())
             raise
 
     def __exit__(self, exc_type, exc_value, traceback):
+        fairness.remove_chord(self)
         self.release()
