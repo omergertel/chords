@@ -52,8 +52,9 @@ class StrictFIFOFairness(object):
     """
     def __iter__(self):
         for chord in list(self._queue):
-            if self._in_loop:
-                yield chord
+            if not self._in_loop:
+                break
+            yield chord
                 
     def _handle_chord(self, chord):
         self._in_loop = chord.acquire()
