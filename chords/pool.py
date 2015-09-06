@@ -74,7 +74,4 @@ class RandomPool(Pool):
         random.shuffle(res)
         return res
 
-    def remove(self, resource):
-        if resource.is_master():
-            super(RandomPool, self).remove(resource)
 
