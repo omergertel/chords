@@ -1,4 +1,4 @@
-import random
+import random, bisect
 from .resource import Resource
 from .exceptions import UnsatisfiableRequestError
 
@@ -75,3 +75,49 @@ class RandomPool(Pool):
         return res
 
 
+class WeightedRandomPool(Pool):
+    """
+    Define request.score_method to create a weighted random score. 
+    Uniform random is default.
+    Score has to be >=0
+    """
+    def find(self, request):
+        found = False
+        resources = self.all()
+
+        scores = self._calc_scores(resources, request)
+
+        while resources:
+            resource = self._pop_resource(resources, scores)
+            if resource.matches(request):
+                found = True
+                if resource.can_acquire(request):
+                    yield resource
+
+        if not found:
+            raise UnsatisfiableRequestError("No resources can match request {}".format(request))
+
+    def _calc_scores(self, resources, request):
+        score_method = request.kwargs.pop('score_method', lambda _:1)
+        scores = []
+        for resource in resources:
+            scores.append(max(score_method(resource), 0))
+        return scores
+    
+    def _pop_resource(self, resources, scores):
+        cum_scores = self._cumsum(scores)
+        score_sum = cum_scores[-1]
+        score = random.random() * score_sum
+        i = bisect.bisect_left(cum_scores, score)
+        resource = resources[i]
+        del scores[i]
+        del resources[i]
+        return resource
+
+    def _cumsum(self, scores):
+        res = []
+        s = 0
+        for score in scores:
+            res.append(score + s)
+            s = res[-1]
+        return res
