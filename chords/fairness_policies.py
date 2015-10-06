@@ -35,7 +35,7 @@ class BestEffortFairness(object):
             _logger.debug('Try allocate {}'.format(chord))
             try:
                 self._handle_chord(chord)
-            except:
+            except Exception as e:
                 chord.set_error(sys.exc_info())
         self._in_loop = False
 
