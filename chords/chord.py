@@ -41,14 +41,15 @@ class Chord(object):
 
     def acquire(self):
         """
-        Add request to queue, and give a chance for everyone to acquire according to order (for fairness).
+        Try acquire directly
 
         Returns:
             True if successful, False otherwise
         """
         if self.is_satisfied() or self._acquire():
             fairness.remove_chord(self)
-            return True # Satisfied before, perhaps by previous iteration on the queue
+            return True
+        return False
 
     def _acquire(self):
         """
