@@ -19,3 +19,17 @@ class Request(object):
 
     def __repr__(self):
         return "<Request {} {} {}>".format('Exclusive' if self._exclusive else '', self.cls, self.kwargs)
+
+    def __eq__(self, o):
+        if not isinstance(o, Request):
+            return False
+        return self.cls == o.cls and self.kwargs == o.kwargs
+
+    def __ne__(self, o):
+        return not self == o
+
+    def __hash__(self, *args, **kwargs):
+        val = (self.cls,)
+        for i in sorted(self.kwargs.keys()):
+            val = val + (i,)
+        return hash(val)

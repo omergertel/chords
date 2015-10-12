@@ -46,7 +46,7 @@ class BestEffortFairness(object):
         chord.acquire()
 
 
-class StrictFIFOFairness(object):
+class StrictFIFOFairness(BestEffortFairness):
     """
     Always ensure older chords are acquired before newer ones.
     """
@@ -59,6 +59,23 @@ class StrictFIFOFairness(object):
     def _handle_chord(self, chord):
         self._in_loop = chord.acquire()
 
+
+class ExclusiveResourceBlocksFairness(BestEffortFairness):
+    """
+    When a resource is requested exclusivly, don't allow any new shared locks on it.
+    This fairness policy prevents starvation.
+    """
+
+    def try_acquire_chords(self):
+        self._blocking = set()
+        super(ExclusiveResourceBlocksFairness, self).try_acquire_chords()
+
+    def _handle_chords(self, chord):
+        if all(request not in self._blocking for request in chord._requests):
+            chord.acquire()
+        for request in chord._requests:
+            if request.is_exclusive():
+                self._blocking.add(request)
 
 _fairness = BestEffortFairness()
 
