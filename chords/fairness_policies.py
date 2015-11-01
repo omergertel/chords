@@ -30,9 +30,9 @@ class BestEffortFairness(object):
             return
         self._in_loop = True
         self._last_run = flux.current_timeline.time()
-        _logger.debug('Trying to allocate {} chords'.format(len(self._queue)))
+        _logger.debug('Trying to acquire {} chords'.format(len(self._queue)))
         for chord in self: # Give everyone a chance to acquire
-            _logger.debug('Try allocate {}'.format(chord))
+            _logger.debug('Try acquiring {}'.format(chord))
             try:
                 self._handle_chord(chord)
             except Exception as e:
