@@ -95,6 +95,7 @@ class Chord(object):
         return itertools.chain(*[cls_resources.items() for cls_resources in itertools.chain(resource_map.values())])
     
     def _try_acquire(self):
+        import flux;flux.current_timeline.sleep(0)
         if self._error:
             raise self._error[0], self._error[1], self._error[2]
         if self.is_satisfied():
