@@ -36,7 +36,9 @@ class BestEffortFairness(object):
             try:
                 self._handle_chord(chord)
             except Exception as e:
+                _logger.debug('Set exception on {}:{}'.format(chord, e))
                 chord.set_error(sys.exc_info())
+                self.remove(chord)
         self._in_loop = False
 
     def __iter__(self):
