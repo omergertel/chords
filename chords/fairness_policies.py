@@ -32,7 +32,6 @@ class BestEffortFairness(object):
         self._last_run = flux.current_timeline.time()
         _logger.debug('Trying to acquire {} chords'.format(len(self._queue)))
         for chord in self: # Give everyone a chance to acquire
-            _logger.debug('Try acquiring {}'.format(chord))
             try:
                 self._handle_chord(chord)
             except Exception as e:
@@ -72,7 +71,7 @@ class ExclusiveResourceBlocksFairness(BestEffortFairness):
         self._blocking = set()
         super(ExclusiveResourceBlocksFairness, self).try_acquire_chords()
 
-    def _handle_chords(self, chord):
+    def _handle_chord(self, chord):
         if all(request not in self._blocking for request in chord._requests):
             chord.acquire()
         for request in chord._requests:
