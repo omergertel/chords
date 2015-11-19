@@ -71,11 +71,12 @@ class Chord(object):
                     found = True
                     break
             if not found:
+                _logger.debug("Can't acquire {}".format(self))
                 return False
 
         # acquire
+        _logger.debug('Acquire {} for {}'.format(resources, self))
         for request, resource in self._items(resources):
-            _logger.debug('Acquire {} with {}'.format(resource, request))
             resource.acquire(request)
 
         self._resources = resources
@@ -84,8 +85,8 @@ class Chord(object):
     def release(self):
         if self.is_satisfied():
             for request, resource in self._items(self._resources):
-                _logger.debug('Release {} from {}'.format(resource, request))
                 resource.release(request)
+            _logger.debug('Release {} from {}'.format(self._resources, self))
         self._resources = None
 
     def set_error(self, error):
@@ -116,7 +117,7 @@ class Chord(object):
         return resource in self._resources
 
     def __repr__(self):
-        return "<Resources {}>".format(self._requests.__repr__() if self._resources is None else self._resources.__repr__())
+        return "<Chord {}>".format(self._requests.__repr__() if self._resources is None else self._resources.__repr__())
 
     def __enter__(self):
         try:
