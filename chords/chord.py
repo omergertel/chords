@@ -97,13 +97,13 @@ class Chord(object):
     
     def _try_acquire(self):
         if self._error:
-            raise self._error[0], self._error[1], self._error[2]
+            raise (self._error[0], self._error[1], self._error[2])
         if self.is_satisfied():
             return True
         fairness.add_chord(self)
         fairness.try_acquire_chords()
         if self._error:
-            raise self._error[0], self._error[1], self._error[2]
+            raise (self._error[0], self._error[1], self._error[2])
         return self.is_satisfied()
 
     def __iter__(self):
