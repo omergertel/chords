@@ -1,28 +1,28 @@
 import pytest
 from chords.request import Request
-from .conftest import TestResource, TestPool
+from .conftest import DummyResource, DummyPool
 from chords.exceptions import UnsatisfiableRequestError
 from chords.pool import RandomPool, WeightedRandomPool
         
 @pytest.fixture
 def pool():
-    return TestPool(int)
+    return DummyPool(int)
 
 
 def test_add(pool):
     length = len(pool.all())
-    pool.add(TestResource(int, 101))
+    pool.add(DummyResource(int, 101))
     assert length + 1 == len(pool.all())
 
 def test_remove(pool):
     length = len(pool.all())
-    pool.remove(TestResource(int, 1))
+    pool.remove(DummyResource(int, 1))
     assert length - 1 == len(pool.all())
 
 def test_fail_remove_not_exists(pool):
-    pool.remove(TestResource(int, 1))
+    pool.remove(DummyResource(int, 1))
     with pytest.raises(ValueError):
-        pool.remove(TestResource(int, 1))
+        pool.remove(DummyResource(int, 1))
 
 def test_find(pool):
     result = [x.get_value() for x in pool.find(Request(int, min_value=5, max_value=10))]
@@ -46,7 +46,7 @@ def test_resource_acquired(pool, exclusive):
 
 def test_random_pool():
     pool = RandomPool()
-    pool._resources = [TestResource(int, i) for i in range(1, 100)]
+    pool._resources = [DummyResource(int, i) for i in range(1, 100)]
     result = [x.get_value() for x in pool.find(Request(int, min_value=5, max_value=10))]
     for i in [5, 6, 7, 8, 9, 10]:
         assert i in result
@@ -59,7 +59,7 @@ def test_random_pool():
 
 def test_weighted_random_asc():
     pool = WeightedRandomPool()
-    pool._resources = [TestResource(int, i) for i in range(1, 100)]
+    pool._resources = [DummyResource(int, i) for i in range(1, 100)]
     largest_number_first = 0
     for _ in range(100):
         result = [x.get_value() for x in pool.find(Request(int, min_value=5, max_value=10, score_method=lambda i:i.get_value() * i.get_value() * i.get_value()))]
@@ -73,7 +73,7 @@ def test_weighted_random_asc():
 
 def test_weighted_random_desc():
     pool = WeightedRandomPool()
-    pool._resources = [TestResource(int, i) for i in range(1, 100)]
+    pool._resources = [DummyResource(int, i) for i in range(1, 100)]
     smallest_number_first = 0
     for _ in range(100):
         result = [x.get_value() for x in pool.find(Request(int, min_value=5, max_value=10, score_method=lambda i:1.0 / i.get_value()))]

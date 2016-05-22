@@ -3,7 +3,7 @@ from chords import registry
 from chords.pool import Pool
 from chords.resource import Resource
 
-class TestResource(Resource):
+class DummyResource(Resource):
     def __init__(self, cls, val):
         Resource.__init__(self, cls)
         self._value = val
@@ -17,7 +17,7 @@ class TestResource(Resource):
                 self._value >= request.kwargs.get('min_value', -sys.maxsize))
 
     def __eq__(self, o):
-        if isinstance(o, TestResource):
+        if isinstance(o, DummyResource):
             return self._value == o._value
         return False
 
@@ -28,15 +28,15 @@ class TestResource(Resource):
         return '<Resource {}:{}>'.format(self.cls, self._value)
 
 
-class TestPool(Pool):
+class DummyPool(Pool):
     def __init__(self, cls):
         Pool.__init__(self)
-        self._resources = [TestResource(cls, i) for i in range(1, 100)]
+        self._resources = [DummyResource(cls, i) for i in range(1, 100)]
 
 @pytest.fixture
 def initiated_registry(request):
-    registry.register(int, TestPool(int))
-    registry.register(float, TestPool(float))
+    registry.register(int, DummyPool(int))
+    registry.register(float, DummyPool(float))
     @request.addfinalizer
     def restore():
         del registry._registry[int]
