@@ -28,8 +28,5 @@ class Request(object):
     def __ne__(self, o):
         return not self == o
 
-    def __hash__(self, *args, **kwargs):
-        val = (self.cls,)
-        for i in sorted(self.kwargs.keys()):
-            val = val + (i,)
-        return hash(val)
+    def __hash__(self):
+        return super(Request, self).__hash__()
