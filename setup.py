@@ -14,6 +14,7 @@ with open(os.path.join(os.path.dirname(__file__), "chords", "__version__.py")) a
 INSTALL_REQUIRED = [
     # DO NOT ADD any package only required for testing
     'waiting',
+    'six',
     'flux'
 ]
 
