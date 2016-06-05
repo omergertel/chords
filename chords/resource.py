@@ -3,44 +3,44 @@ from .exceptions import UnsatisfiedResourcesError
 class Resource(object):
     def __init__(self, cls):
         self.cls = cls
-        self._shared = 0
+        self._requests = []
         self._exclusive = False
 
     def is_exclusive(self):
         return self._exclusive
 
     def is_shared(self):
-        return self._shared > 0
+        return len(self._requests) > 0 and not self.is_exclusive()
 
     def can_acquire(self, request):
         if self.is_exclusive():
             return False
         if request.is_exclusive():
-            return self._shared == 0
+            return len(self._requests) == 0
         return True
 
     def acquire(self, request):
-        if self._exclusive:
+        if self.is_exclusive():
             raise UnsatisfiedResourcesError("Can't acquire exclusive resource {}".format(self))
         if request is not None and request.is_exclusive():
-            if self._shared > 0:
+            if self.is_shared():
                 raise UnsatisfiedResourcesError("Can't acquire resource {} exclusively while shared".format(self))
             self._exclusive = True
-        else:
-            self._shared += 1
+        self._requests.append(request)
 
     def release(self, request):
         if request.is_exclusive():
-            if not self._exclusive:
-                raise UnsatisfiedResourcesError("Exclusive resource {} can't be released".format(self))
+            if not self.is_exclusive():
+                raise UnsatisfiedResourcesError("Non exclusive resource {} can't be released from {}".format(self, request))
             self._exclusive = False
         else:
-            if self._shared == 0 or self._exclusive:
-                raise UnsatisfiedResourcesError("Shared resource {} can't be released".format(self))
-            self._shared -= 1
+            if not self.is_shared():
+                raise UnsatisfiedResourcesError("Non shared Resource {} can't be released from {}".format(self, request))
+        self._requests.remove(request)
         
     def matches(self, request):
         return self.cls == request.cls
+
 
 class ProxyResource(Resource):
     """

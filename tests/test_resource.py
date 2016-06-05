@@ -47,7 +47,7 @@ def test_acquire_shared_twice(resource):
     assert resource.can_acquire(shared_req)
     resource.acquire(shared_req)
     assert resource.is_shared()
-    assert resource._shared == 2
+    assert len(resource._requests) == 2
     assert not resource.is_exclusive()
 
 def test_release(req, resource):
