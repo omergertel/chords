@@ -30,6 +30,10 @@ class BestEffortFairness(object):
             return
         self._in_loop = True
         self._last_run = flux.current_timeline.time()
+        self._check_chords()
+        self._in_loop = False
+
+    def _check_chords(self):
         _logger.debug('Trying to acquire {} chords'.format(len(self._queue)))
         for chord in self: # Give everyone a chance to acquire
             try:
@@ -38,14 +42,13 @@ class BestEffortFairness(object):
                 _logger.debug('Set exception on {}:{}'.format(chord, e))
                 chord.set_error(sys.exc_info())
                 self.remove(chord)
-        self._in_loop = False
+
+    def _handle_chord(self, chord):
+        chord.acquire()
 
     def __iter__(self):
         return list(self._queue).__iter__()
     
-    def _handle_chord(self, chord):
-        chord.acquire()
-
 
 class StrictFIFOFairness(BestEffortFairness):
     """
@@ -67,9 +70,9 @@ class ExclusiveResourceBlocksFairness(BestEffortFairness):
     This fairness policy prevents starvation.
     """
 
-    def try_acquire_chords(self):
+    def _check_chords(self):
         self._blocking = set()
-        super(ExclusiveResourceBlocksFairness, self).try_acquire_chords()
+        super(ExclusiveResourceBlocksFairness, self)._check_chords()
 
     def _handle_chord(self, chord):
         if all(request not in self._blocking for request in chord._requests):
