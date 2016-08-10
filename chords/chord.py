@@ -1,5 +1,5 @@
 import waiting, itertools, logging, sys
-from ._compat import reraise
+from six import reraise
 from .exceptions import UnsatisfiedResourcesError
 from .request import Request
 from . import fairness_policies as fairness

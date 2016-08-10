@@ -1,8 +1,9 @@
+from collections import OrderedDict
 
 class Request(object):
     def __init__(self, cls, exclusive=False, **kwargs):
         self.cls = cls
-        self.kwargs = kwargs
+        self.kwargs = OrderedDict(sorted(kwargs.items(), key=lambda x:x[0]))
         self._exclusive = exclusive
 
     def is_exclusive(self):
@@ -18,7 +19,7 @@ class Request(object):
             return self.kwargs.get(k)
 
     def __repr__(self):
-        return "<Request {} {} {}>".format('Exclusive' if self._exclusive else '', self.cls, self.kwargs)
+        return "<Request {}{} ({})>".format('Exclusive ' if self._exclusive else '', self.cls.__name__, ', '.join('{}={}'.format(k, v) for k, v in self.kwargs.items()))
 
     def __eq__(self, o):
         if not isinstance(o, Request):
@@ -29,4 +30,4 @@ class Request(object):
         return not self == o
 
     def __hash__(self):
-        return super(Request, self).__hash__()
+        return hash((self.cls,) + tuple(self.kwargs.keys()))
