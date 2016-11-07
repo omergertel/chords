@@ -69,10 +69,11 @@ class Chord(object):
             for resource in registry.find_resources(request):
                 if resource not in cls_resources.values():
                     cls_resources[request] = resource
+                    _logger.debug('Found {} for {}'.format(resource, request))
                     found = True
                     break
             if not found:
-                _logger.debug("Can't acquire {}".format(self))
+                _logger.debug("Can't acquire {} because resource for {} was not found".format(self, request))
                 return False
 
         # acquire
@@ -98,13 +99,13 @@ class Chord(object):
     
     def _try_acquire(self):
         if self._error:
-            raise reraise(self._error[0], self._error[1], self._error[2])
+            reraise(self._error[0], self._error[1], self._error[2])
         if self.is_satisfied():
             return True
         fairness.add_chord(self)
         fairness.try_acquire_chords()
         if self._error:
-            raise reraise(self._error[0], self._error[1], self._error[2])
+            reraise(self._error[0], self._error[1], self._error[2])
         return self.is_satisfied()
 
     def __iter__(self):
